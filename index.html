@@ -1,0 +1,757 @@
+Here is an improved, TikTok-style frontend mockup for "GALA!" with enhanced
+UI/UX, fully clickable navigation bars, and smooth scroll-snap locking. ```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no"
+    />
+    <title>GALA! — Scroll Local Discovery</title>
+    <!-- Tailwind + Font Awesome -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+    />
+    <style>
+      /* ----- CUSTOM VARIABLES & RESETS (Palette from design) ----- */
+      :root {
+        --gala-wood: #9d7a53;
+        --gala-blush: #f3d9d8;
+        --gala-teal: #4aa3a5;
+        --gala-deep: #413f83;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        user-select: none; /* improves app-like feel, but text select optional */
+      }
+
+      body {
+        background: #0a0a12;
+        overflow: hidden;
+        height: 100vh;
+        width: 100vw;
+        font-family:
+          "Inter",
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+      }
+
+      /* TIKTOK STYLE SCROLL CONTAINER — vertical mandatory snap */
+      .tiktok-feed {
+        height: 100vh;
+        width: 100%;
+        overflow-y: scroll;
+        scroll-snap-type: y mandatory;
+        scroll-behavior: smooth;
+        position: relative;
+        z-index: 1;
+        /* hides scrollbar for cleaner look but still functional */
+        scrollbar-width: thin;
+      }
+
+      .tiktok-feed::-webkit-scrollbar {
+        width: 4px;
+        background: transparent;
+      }
+      .tiktok-feed::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 10px;
+      }
+
+      /* EACH POST = FULLSCREEN SNAP */
+      .post-snap {
+        scroll-snap-align: start;
+        height: 100vh;
+        width: 100%;
+        position: relative;
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        will-change: transform;
+      }
+
+      /* Dark gradient overlay for text readability (TikTok style) */
+      .post-gradient {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          to top,
+          rgba(0, 0, 0, 0.75) 0%,
+          rgba(0, 0, 0, 0.2) 50%,
+          rgba(0, 0, 0, 0.05) 100%
+        );
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      /* GLASSMORPHISM RIGHT SIDEBAR — like TikTok actions */
+      .action-sidebar {
+        position: absolute;
+        bottom: 22%;
+        right: 12px;
+        z-index: 20;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 28px;
+        background: rgba(20, 18, 28, 0.55);
+        backdrop-filter: blur(16px);
+        border-radius: 48px;
+        padding: 18px 12px;
+        border: 1px solid rgba(255, 245, 235, 0.2);
+        transition: all 0.2s ease;
+      }
+
+      .action-icon {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        color: #fff;
+        font-size: 1.8rem;
+        cursor: pointer;
+        transition: transform 0.08s linear;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+      }
+
+      .action-icon:active {
+        transform: scale(0.88);
+      }
+
+      .action-icon span {
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+      }
+
+      /* LIKE CHECKBOX HACK (CSS-only toggling) */
+      .like-toggle {
+        display: none;
+      }
+
+      .like-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+      }
+
+      .like-label .fas.fa-heart {
+        display: none;
+      }
+
+      .like-toggle:checked + .like-label .far.fa-heart {
+        display: none;
+      }
+
+      .like-toggle:checked + .like-label .fas.fa-heart {
+        display: inline-block;
+        color: #ff4d6d;
+        animation: pop 0.2s ease;
+      }
+
+      @keyframes pop {
+        0% {
+          transform: scale(0.8);
+          opacity: 0.6;
+        }
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+      }
+
+      /* Location chip + interactive click */
+      .location-chip {
+        background: rgba(0, 0, 0, 0.65);
+        backdrop-filter: blur(10px);
+        padding: 6px 16px;
+        border-radius: 40px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: white;
+        border: 0.5px solid rgba(255, 215, 180, 0.5);
+        transition: all 0.1s;
+        cursor: pointer;
+      }
+      .location-chip:active {
+        background: var(--gala-teal);
+        transform: scale(0.96);
+        color: #111;
+      }
+
+      /* Music tag (TikTok style) */
+      .music-tag {
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(8px);
+        padding: 5px 14px;
+        border-radius: 40px;
+        font-size: 0.7rem;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: #f0f0f0;
+        letter-spacing: 0.2px;
+      }
+
+      /* Caption with gradient & readability */
+      .caption-glass {
+        background: linear-gradient(
+          90deg,
+          rgba(0, 0, 0, 0.7) 0%,
+          rgba(0, 0, 0, 0.3) 100%
+        );
+        backdrop-filter: blur(2px);
+        padding: 10px 18px;
+        border-radius: 28px;
+        font-weight: 500;
+        border-left: 3px solid var(--gala-teal);
+      }
+
+      /* Follow button & CTA styles from palette */
+      .follow-btn-sm {
+        background: rgba(255, 255, 245, 0.18);
+        backdrop-filter: blur(4px);
+        border-radius: 40px;
+        padding: 5px 14px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        transition: 0.1s;
+        cursor: pointer;
+        border: 0.5px solid rgba(255, 255, 200, 0.5);
+        color: white;
+      }
+      .follow-btn-sm:active {
+        background: var(--gala-teal);
+        color: black;
+        transform: scale(0.94);
+      }
+
+      .cta-primary {
+        background: var(--gala-teal);
+        padding: 8px 18px;
+        border-radius: 40px;
+        font-weight: 700;
+        font-size: 0.75rem;
+        transition: all 0.1s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        color: #0f0f1a;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      }
+      .cta-primary:active {
+        transform: scale(0.94);
+        background: var(--gala-deep);
+        color: white;
+      }
+
+      .new-tag {
+        background: linear-gradient(135deg, #ffb347, #ff6b2b);
+        padding: 4px 12px;
+        border-radius: 40px;
+        font-size: 0.7rem;
+        font-weight: bold;
+      }
+
+      /* FIXED TOP TOGGLE (Following | Near You) */
+      .top-toggle-fixed {
+        position: fixed;
+        top: 16px;
+        left: 0;
+        right: 0;
+        z-index: 60;
+        display: flex;
+        justify-content: center;
+        pointer-events: none;
+      }
+
+      .toggle-pill {
+        background: rgba(18, 18, 28, 0.8);
+        backdrop-filter: blur(20px);
+        border-radius: 60px;
+        padding: 5px 12px;
+        display: flex;
+        gap: 6px;
+        border: 1px solid rgba(255, 255, 245, 0.2);
+        pointer-events: auto;
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+      }
+
+      .toggle-option {
+        padding: 6px 24px;
+        border-radius: 40px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.15s;
+        cursor: pointer;
+        background: transparent;
+        color: #eaeef5;
+      }
+      .toggle-option.active {
+        background: var(--gala-teal);
+        color: #0a0a12;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      }
+      .toggle-option:active {
+        transform: scale(0.94);
+      }
+
+      /* BOTTOM NAVIGATION (TikTok style) */
+      .bottom-nav-gala {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(12, 12, 22, 0.92);
+        backdrop-filter: blur(24px);
+        border-top: 0.5px solid rgba(255, 255, 245, 0.12);
+        padding: 10px 24px 18px;
+        z-index: 60;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-radius: 28px 28px 0 0;
+      }
+
+      .nav-icon {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        color: #cfcfdf;
+        font-size: 1.5rem;
+        transition: all 0.1s;
+        cursor: pointer;
+      }
+      .nav-icon:active {
+        transform: scale(0.88);
+        color: var(--gala-teal);
+      }
+      .nav-icon span {
+        font-size: 0.65rem;
+        font-weight: 500;
+      }
+      .nav-add-btn {
+        background: var(--gala-deep);
+        padding: 6px 20px;
+        border-radius: 40px;
+        gap: 6px;
+        box-shadow: 0 4px 12px rgba(65, 63, 131, 0.4);
+      }
+
+      /* INTEREST MODAL (CSS :TARGET) */
+      .interest-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        backdrop-filter: blur(16px);
+        z-index: 200;
+        display: none;
+        align-items: center;
+        justify-content: center;
+      }
+      .interest-overlay:target {
+        display: flex;
+      }
+      .modal-inner {
+        width: 330px;
+        background: rgba(24, 22, 38, 0.96);
+        backdrop-filter: blur(20px);
+        border-radius: 56px;
+        padding: 28px 24px;
+        text-align: center;
+        border: 1px solid rgba(157, 122, 83, 0.5);
+        box-shadow: 0 30px 40px rgba(0, 0, 0, 0.5);
+      }
+      .interest-chip {
+        background: rgba(255, 250, 240, 0.1);
+        padding: 8px 18px;
+        border-radius: 60px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.1s;
+        border: 1px solid rgba(74, 163, 165, 0.6);
+      }
+      .interest-chip:active {
+        background: var(--gala-teal);
+        transform: scale(0.95);
+        color: #111;
+      }
+      .close-modal-x {
+        margin-top: 24px;
+        display: inline-block;
+        background: var(--gala-wood);
+        padding: 10px 26px;
+        border-radius: 60px;
+        text-decoration: none;
+        font-weight: 700;
+      }
+
+      /* safe area for bottom content (avoid navbar overlap) */
+      .bottom-content {
+        position: absolute;
+        bottom: 95px;
+        left: 16px;
+        right: 70px;
+        z-index: 15;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      /* Responsive text */
+      @media (max-width: 480px) {
+        .action-sidebar {
+          gap: 22px;
+          padding: 14px 10px;
+          bottom: 20%;
+        }
+        .bottom-content {
+          bottom: 85px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- FIXED TOP TOGGLE (Following | Near You) -->
+    <div class="top-toggle-fixed">
+      <div class="toggle-pill" id="toggleGroup">
+        <div class="toggle-option active" data-toggle="following">
+          Following
+        </div>
+        <div class="toggle-option" data-toggle="nearyou">Near You</div>
+      </div>
+    </div>
+
+    <!-- BOTTOM NAVIGATION (TikTok style, fully clickable) -->
+    <div class="bottom-nav-gala">
+      <div class="nav-icon" data-nav="home">
+        <i class="fas fa-home"></i><span>Home</span>
+      </div>
+      <div class="nav-icon" data-nav="search">
+        <i class="fas fa-search"></i><span>Discover</span>
+      </div>
+      <div class="nav-icon nav-add-btn" data-nav="create">
+        <i class="fas fa-plus-circle"></i><span>Create</span>
+      </div>
+      <div class="nav-icon" data-nav="inbox">
+        <i class="fas fa-inbox"></i><span>Inbox</span>
+      </div>
+      <div class="nav-icon" data-nav="profile">
+        <i class="fas fa-user"></i><span>Profile</span>
+      </div>
+    </div>
+
+    <!-- SCROLL FEED (4 TikTok-style posts) -->
+    <div class="tiktok-feed">
+      <!-- POST 1 — Aesthetic Café (workspace vibes) -->
+      <div
+        class="post-snap"
+        style="
+          background-image: url(&quot;https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=1200&h=1600&fit=crop&quot;);
+        "
+      >
+        <div class="post-gradient"></div>
+        <!-- Right Sidebar Actions -->
+        <div class="action-sidebar">
+          <input type="checkbox" id="like1" class="like-toggle" />
+          <label for="like1" class="like-label action-icon">
+            <i class="far fa-heart"></i>
+            <i class="fas fa-heart"></i>
+            <span>1.4k</span>
+          </label>
+          <div class="action-icon">
+            <i class="far fa-comment"></i><span>124</span>
+          </div>
+          <div class="action-icon">
+            <i class="far fa-bookmark"></i><span>Save</span>
+          </div>
+          <div class="action-icon">
+            <i class="far fa-share-alt"></i><span>Share</span>
+          </div>
+        </div>
+        <!-- Bottom left content (like TikTok caption + music) -->
+        <div class="bottom-content">
+          <div class="flex items-center gap-2 flex-wrap">
+            <div class="location-chip" tabindex="0">📍 0.2 mi • Downtown</div>
+            <div class="follow-btn-sm">+ Follow</div>
+          </div>
+          <div class="flex items-center justify-between flex-wrap gap-2 pr-2">
+            <span class="text-white text-2xl font-bold drop-shadow-lg"
+              >☕ Daily Grind Café</span
+            >
+          </div>
+          <div class="caption-glass text-white text-sm max-w-[90%]">
+            ✨ Aesthetic workspace, specialty pour overs & slow jazz. Perfect
+            for deep work or cozy dates✨
+          </div>
+          <div class="music-tag">
+            <i class="fas fa-music text-xs"></i> Lofi Beats · GALA pick
+          </div>
+        </div>
+      </div>
+
+      <!-- POST 2 — Date Night / Dining with "Book Now" CTA -->
+      <div
+        class="post-snap"
+        style="
+          background-image: url(&quot;https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&h=1600&fit=crop&quot;);
+        "
+      >
+        <div class="post-gradient"></div>
+        <div class="action-sidebar">
+          <input type="checkbox" id="like2" class="like-toggle" />
+          <label for="like2" class="like-label action-icon">
+            <i class="far fa-heart"></i>
+            <i class="fas fa-heart"></i>
+            <span>3.2k</span>
+          </label>
+          <div class="action-icon">
+            <i class="far fa-comment"></i><span>289</span>
+          </div>
+          <div class="action-icon">
+            <i class="far fa-bookmark"></i><span>Save</span>
+          </div>
+          <div class="action-icon">
+            <i class="far fa-share-alt"></i><span>Share</span>
+          </div>
+        </div>
+        <div class="bottom-content">
+          <div class="flex items-center gap-2 flex-wrap">
+            <div class="location-chip" tabindex="0">
+              📍 0.4 mi • Historic Quarter
+            </div>
+            <div class="follow-btn-sm">+ Follow</div>
+          </div>
+          <div class="flex items-center justify-between w-full flex-wrap gap-2">
+            <span class="text-white text-2xl font-bold drop-shadow-lg"
+              >🌹 Nocturne Social House</span
+            >
+            <div class="cta-primary" tabindex="0">
+              Book Now <i class="fas fa-arrow-right"></i>
+            </div>
+          </div>
+          <div class="caption-glass text-white text-sm max-w-[85%]">
+            🔥 Candlelit dinner + tasting menu. Live jazz & speakeasy vibes.
+            Perfect date night.
+          </div>
+          <div class="music-tag">
+            <i class="fas fa-music"></i> Jazz Quartet · Live
+          </div>
+        </div>
+      </div>
+
+      <!-- POST 3 — Local Boutique / Thrift with New Arrival Tag -->
+      <div
+        class="post-snap"
+        style="
+          background-image: url(&quot;https://images.unsplash.com/photo-1567401893414-76b7b1e5a7a5?w=1200&h=1600&fit=crop&quot;);
+        "
+      >
+        <div class="post-gradient"></div>
+        <div class="action-sidebar">
+          <input type="checkbox" id="like3" class="like-toggle" />
+          <label for="like3" class="like-label action-icon">
+            <i class="far fa-heart"></i>
+            <i class="fas fa-heart"></i>
+            <span>892</span>
+          </label>
+          <div class="action-icon">
+            <i class="far fa-comment"></i><span>56</span>
+          </div>
+          <div class="action-icon">
+            <i class="far fa-bookmark"></i><span>Save</span>
+          </div>
+          <div class="action-icon">
+            <i class="far fa-share-alt"></i><span>Share</span>
+          </div>
+        </div>
+        <div class="bottom-content">
+          <div class="flex items-center gap-2 flex-wrap">
+            <div class="location-chip" tabindex="0">
+              📍 0.1 mi • Arts District
+            </div>
+            <div class="follow-btn-sm">+ Follow</div>
+          </div>
+          <div class="flex items-center justify-between flex-wrap gap-2 w-full">
+            <span class="text-white text-2xl font-bold drop-shadow-lg"
+              >👗 Velvet & Lace Thrift</span
+            >
+            <div class="new-tag text-white">
+              <i class="fas fa-tag mr-1"></i> NEW ARRIVALS
+            </div>
+          </div>
+          <div class="caption-glass text-white text-sm">
+            🕰️ 90s Y2K + curated vintage finds. Sustainable style, new drop just
+            landed.
+          </div>
+          <div class="music-tag">
+            <i class="fas fa-headphones"></i> 2000s throwback 🎧
+          </div>
+        </div>
+      </div>
+
+      <!-- POST 4 — Hidden Gem / Viewpoint with "Get Directions" -->
+      <div
+        class="post-snap"
+        style="
+          background-image: url(&quot;https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=1200&h=1600&fit=crop&quot;);
+        "
+      >
+        <div class="post-gradient"></div>
+        <div class="action-sidebar">
+          <input type="checkbox" id="like4" class="like-toggle" />
+          <label for="like4" class="like-label action-icon">
+            <i class="far fa-heart"></i>
+            <i class="fas fa-heart"></i>
+            <span>2.7k</span>
+          </label>
+          <div class="action-icon">
+            <i class="far fa-comment"></i><span>204</span>
+          </div>
+          <div class="action-icon">
+            <i class="far fa-bookmark"></i><span>Save</span>
+          </div>
+          <div class="action-icon">
+            <i class="far fa-share-alt"></i><span>Share</span>
+          </div>
+        </div>
+        <div class="bottom-content">
+          <div class="flex items-center gap-2 flex-wrap">
+            <div class="location-chip" tabindex="0">📍 0.7 mi • Eagle Peak</div>
+            <div class="follow-btn-sm">+ Follow</div>
+          </div>
+          <div class="flex items-center justify-between w-full flex-wrap gap-2">
+            <span class="text-white text-2xl font-bold drop-shadow-lg"
+              >🏞️ Eagle Peak Overlook</span
+            >
+            <div class="cta-primary" tabindex="0">
+              <i class="fas fa-directions"></i> Directions
+            </div>
+          </div>
+          <div class="caption-glass text-white text-sm">
+            🌅 Golden hour viewpoint, secret local gem. Picnic ready & dog
+            friendly.
+          </div>
+          <div class="music-tag">
+            <i class="fas fa-cloud-sun"></i> ambient escape · chill
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CSS-ONLY :target MODAL (Interest selector) appears on load -->
+    <div id="interestModal" class="interest-overlay">
+      <div class="modal-inner">
+        <i class="fas fa-spa text-3xl mb-2" style="color: #f3d9d8"></i>
+        <h2 class="text-2xl font-bold text-white mb-1">
+          ✨ Welcome to GALA! ✨
+        </h2>
+        <p class="text-xs text-gray-200 mb-5">Pick your local vibe</p>
+        <div class="flex flex-wrap gap-3 justify-center mb-5">
+          <div class="interest-chip">🍰 Desserts</div>
+          <div class="interest-chip">🌙 Nightlife</div>
+          <div class="interest-chip">☕ Café Vibes</div>
+          <div class="interest-chip">🛍️ Boutiques</div>
+          <div class="interest-chip">🌿 Outdoors</div>
+          <div class="interest-chip">🎨 Art & Culture</div>
+        </div>
+        <a
+          href="#"
+          class="close-modal-x text-white no-underline text-sm font-semibold"
+          >Start exploring →</a
+        >
+      </div>
+    </div>
+
+    <!-- Lightweight JS: Only to make the modal appear on load (CSS :target), interactive toggles and navigation clicks (visual feedback without backend) -->
+    <script>
+      (function () {
+        // Launch interest modal on page load via hash (CSS target)
+        if (
+          !window.location.hash ||
+          window.location.hash !== "#interestModal"
+        ) {
+          window.location.hash = "interestModal";
+        }
+
+        // 1) Following | Near You toggle interactive active state (real toggle like TikTok)
+        const toggleOptions = document.querySelectorAll(".toggle-option");
+        toggleOptions.forEach((opt) => {
+          opt.addEventListener("click", function (e) {
+            toggleOptions.forEach((btn) => btn.classList.remove("active"));
+            this.classList.add("active");
+            // Optional simulation: switch feed content mockup (could be visual but UI just pure style)
+            console.log(`[GALA] feed toggled: ${this.innerText}`);
+          });
+        });
+
+        // 2) Make bottom navigation fully clickable with active visual/feedback (no backend but fast response)
+        const navItems = document.querySelectorAll(".nav-icon");
+        navItems.forEach((item) => {
+          item.addEventListener("click", function (e) {
+            // Provide subtle haptic style (already has :active, but also we log for demo)
+            const navText = this.querySelector("span")?.innerText || "icon";
+            console.log(`Navigation: ${navText} clicked`);
+            // Optional: add a tiny ripple simulation? Not needed, but we ensure active style via class.
+            this.style.transform = "scale(0.92)";
+            setTimeout(() => {
+              if (this) this.style.transform = "";
+            }, 120);
+          });
+        });
+
+        // 3) Extra click feedback for any CTA / follow buttons (already have :active but ensure)
+        const allCtas = document.querySelectorAll(
+          ".cta-primary, .follow-btn-sm, .location-chip",
+        );
+        allCtas.forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            // just simulate mock feedback (no backend)
+            console.log(`[GALA] interactive element: ${btn.innerText.trim()}`);
+          });
+        });
+
+        // 4) ensure modal closes properly and doesn't cause scroll lock
+        const closeModalLink = document.querySelector(".close-modal-x");
+        if (closeModalLink) {
+          closeModalLink.addEventListener("click", function (e) {
+            // removes hash so modal disappears (CSS :target)
+            if (window.location.hash === "#interestModal") {
+              history.pushState(
+                "",
+                document.title,
+                window.location.pathname + window.location.search,
+              );
+            }
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>
+```
